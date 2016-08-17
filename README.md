@@ -28,9 +28,9 @@ See more sample usages in runner.py
 
 
 ## To-Do
-- [ ]Build a GUI
-- [ ]Build a stand-alone executable
-- [ ]Extract keywords
+- [ ] Build a GUI
+- [ ] Build a stand-alone executable
+- [ ] Extract keywords
 - [ ] Add additonal configurations methods for searching.
 
 ##Notice
