@@ -1,5 +1,4 @@
-#!/usr/bin/env python		
-__author__ = "Pushkar Gujar"
+#!/usr/bin/python3
 
 import csv
 import sys
@@ -27,6 +26,13 @@ class GetCraiglistData:
     def getterm(self):
         """returns search term """
         return self.search_term
+
+    @property
+    def geturl(self):
+        """
+        :return: craiglist site url used for searching
+        """
+        return self.url
 
     def seturl(self, url):
         try:
@@ -93,13 +99,13 @@ class GetCraiglistData:
             print("\nNo results")
         else:
             try:
-                with open('SearchResults.csv', 'wt') as fobj:
+                with open('SearchResults.csv', 'wt', encoding="UTF-8") as fobj:
                     cwriter = csv.writer(fobj, dialect='excel')
                     cwriter.writerow(("Title", "Posting URL", "Price", "Location", "Posted on", "Post Time",
                                       "Updated on", "Update time", "Description"))
                     for item in self.items:
                         cwriter.writerow(item)
-                print("\nResult saved in SearchResults.csv\n Goodbye.")
+                print("\nResult saved in SearchResults.csv\nGoodbye.")
             except IOError:
                 print("\nError saving data in file : %s" % sys.exc_info()[0])
 
@@ -164,8 +170,11 @@ class GetCraiglistData:
 
                 pspan = post_soup.find("span", {"class": "postingtitletext"})
                 pbody = post_soup.find("section", {"id": "postingbody"})
+
                 location = pspan.small.text if pspan.small is not None else "Not Listed"
+
                 body_text = pbody.text if pbody is not None else "Not Listed"
+
                 pbody = post_soup.find_all("p", {"class": "postinginfo"})
 
                 if pbody[2].find("time", {"class": "timeago"}) is not None:
@@ -177,7 +186,7 @@ class GetCraiglistData:
                     upd_time = (pbody[3].find("time", {"class": "timeago"}))['datetime'].split("T")
                 else:
                     upd_time = ["N/A", "N/A"]
-                # print(posted['datetime'])
+
                 self.items.append((title, post_url, price, location, post_time[0], post_time[1][:-5],
                                    upd_time[0], upd_time[1][:-5], body_text))
 
@@ -209,7 +218,10 @@ class GetCraiglistSites:
             return
         except ChunkedEncodingError:
             print("\n Site data delayed, skipping retrieval.. : {0} \n".format(sys.exc_info()[0]))
-        except:
+        except TypeError:
+            print("\n Continent not found.")
+            print(" Hint: Use one of these - {0}".format(set(self.dict_map)))
+        except :
             print("\n Unknown error : {0} \n".format(sys.exc_info()[0]))
 
     def __extractFromList__(self):
@@ -223,7 +235,7 @@ class GetCraiglistSites:
 
         for keys, values in sorted(self.site_map.items()):
             print(keys, "\t" * 5, values)
-        print("=" * 20)
+        print("=" * 20 + "                         " + "=" * 20)
 
     def getsuggestions(self, city):
         print("finding recommendations.. ")
