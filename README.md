@@ -69,7 +69,11 @@ csv file has following headers -
 
 `Post Title` `Posting URL` `Price` `Location` `Posted on` `Posted Time` `Updated on` `Updated Time` `Description`
 
-In addition, `GetCraiglistSites` has property `getterm` to retrive search string that was passed to class while creating an object
+`GetCraiglistSites` properties -
+ - `getterm` to retrive search string that was passed to class while creating an object 
+ - `geturl` to get the craiglist url that was used while performing search. 
+
+
 
 =================
 
