@@ -115,7 +115,7 @@ class GetCraiglistData:
         if self.totalCount == 0:
             return self.items
 
-        rows = []
+        result_pages = []
         # del soup, webdata
         print("\nFound %s items" % self.totalCount)
         print("\nFetching data...")
@@ -136,14 +136,14 @@ class GetCraiglistData:
                 print("\nSite response delayed, skipping retrieval..: {0}".format(sys.exc_info()[0]))
             finally:
                 if len(temp_rows) > 0:
-                    rows.append(temp_rows)
+                    result_pages.append(temp_rows)
 
         # # print(near_areas)
         # for area in near_areas:
         #     print(area['value'], area.text)
 
-        for elements in rows:
-            for row in elements:
+        for aPage in result_pages:
+            for row in aPage:
                 id_url = row.find("a", {"class": "hdrlnk"})
                 lurl = (id_url.get("href"))
                 posting = urlparse(lurl)
@@ -153,8 +153,11 @@ class GetCraiglistData:
                     post_url = urlparse(self.url).scheme + "://" + posting.netloc + posting.path
 
                 # print(post_url)
+                # title_find = id_url.find("span", {"id": "titletextonly"})
+                # title = title_find.text if title_find is not None else "Not Listed"
 
-                title = (id_url.find("span", {"id": "titletextonly"})).text
+                # Fix for issue #2
+                title = id_url.text if id_url is not None else "No Title"
 
                 span = row.find("span", {"class": "price"})
                 price = (span.text if span is not None else "Not Listed")
@@ -222,7 +225,7 @@ class GetCraiglistSites:
         except TypeError:
             print("\n Continent not found.")
             print(" Hint: Use one of these - {0}".format(set(self.dict_map)))
-        except :
+        except:
             print("\n Unknown error : {0} \n".format(sys.exc_info()[0]))
 
     def __extractFromList__(self):
