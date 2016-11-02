@@ -58,7 +58,7 @@ class GetCraiglistData:
             print("\nreverting back to default url.. %s" % url)
         return
 
-    def pageFetcher(self, worker):
+    def pagefetcher(self, worker):
         temp_url = None
         with self.fetchList_lock:
             if self.Qurl.empty() is False:
@@ -83,8 +83,7 @@ class GetCraiglistData:
         else:
             pass
 
-
-    def rowFetcher(self, worker):
+    def rowfetcher(self, worker):
         row = None
         with self.fetchList_lock:
             if self.Qurl.empty() is False:
@@ -117,7 +116,7 @@ class GetCraiglistData:
 
         location = "Not Listed"
         try:
-            location = pspan.small.text if pspan is not None  else "Not Listed"
+            location = pspan.small.text if pspan is not None else "Not Listed"
         except AttributeError:
             pass
 
@@ -138,14 +137,11 @@ class GetCraiglistData:
             self.items.append((title, post_url, price, location, post_time[0], post_time[1][:-5],
                                upd_time[0], upd_time[1][:-5], body_text))
 
-
-
     def pageThreader(self):
         while True:
             worker = self.pageWorkerQueue.get()
-            self.pageFetcher(worker)
+            self.pagefetcher(worker)
             self.pageWorkerQueue.task_done()
-
 
     def start_pageThreads(self):
         for x in range(4):  # Four threads
@@ -157,14 +153,11 @@ class GetCraiglistData:
             self.pageWorkerQueue.put(worker)
         self.pageWorkerQueue.join()  # block until item in queue is processed
 
-
-
     def rowThreader(self):
         while True:
             worker = self.rowWorkerQueue.get()
-            self.rowFetcher(worker)
+            self.rowfetcher(worker)
             self.rowWorkerQueue.task_done()
-
 
     def start_rowThreads(self):
         for x in range(4):  # Four threads
@@ -174,7 +167,6 @@ class GetCraiglistData:
         for worker in range(self.Qurl.qsize()):
             self.rowWorkerQueue.put(worker)
         self.rowWorkerQueue.join()  # block until item in queue is processed
-
 
     def __getTotalresults__(self):
         self.totalCount = 0
