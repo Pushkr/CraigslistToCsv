@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 from queue import Queue
 import threading
 
+
 class GetCraiglistData:
     """ Use this class to search,save and/or print craiglist data"""
 
@@ -55,8 +56,9 @@ class GetCraiglistData:
         else:
             print("\nCannot set requested URL, Site response code : %s" % scode)
             print("\nreverting back to default url.. %s" % url)
+        return
 
-    def pageFetcher(self,worker):
+    def pageFetcher(self, worker):
         temp_url = None
         with self.fetchList_lock:
             if self.Qurl.empty() is False:
@@ -75,11 +77,12 @@ class GetCraiglistData:
                 print("\nSite response delayed, skipping retrieval..: {0}".format(sys.exc_info()[0]))
             finally:
                 with self.appendList_lock:
-                    #print(threading.current_thread().name, self.Qurl.qsize(), temp_url)
+                    # print(threading.current_thread().name, self.Qurl.qsize(), temp_url)
                     if len(temp_rows) > 0:
                         self.result_pages.append(temp_rows)
         else:
             pass
+
 
     def rowFetcher(self, worker):
         row = None
@@ -130,10 +133,12 @@ class GetCraiglistData:
                 upd_time = (pbody[3].find("time", {"class": "timeago"}))['datetime'].split("T")
         except:
             pass
-
+        # push retrieved details into global list
         with self.appendList_lock:
             self.items.append((title, post_url, price, location, post_time[0], post_time[1][:-5],
-                           upd_time[0], upd_time[1][:-5], body_text))
+                               upd_time[0], upd_time[1][:-5], body_text))
+
+
 
     def pageThreader(self):
         while True:
@@ -143,20 +148,23 @@ class GetCraiglistData:
 
 
     def start_pageThreads(self):
-        for x in range(4): # Four threads
+        for x in range(4):  # Four threads
             t = threading.Thread(target=self.pageThreader)
             t.daemon = True
             t.start()
 
         for worker in range(self.Qurl.qsize()):
             self.pageWorkerQueue.put(worker)
-        self.pageWorkerQueue.join() # block until item in queue is processed
+        self.pageWorkerQueue.join()  # block until item in queue is processed
+
+
 
     def rowThreader(self):
         while True:
             worker = self.rowWorkerQueue.get()
             self.rowFetcher(worker)
             self.rowWorkerQueue.task_done()
+
 
     def start_rowThreads(self):
         for x in range(4):  # Four threads
@@ -165,7 +173,8 @@ class GetCraiglistData:
             t.start()
         for worker in range(self.Qurl.qsize()):
             self.rowWorkerQueue.put(worker)
-        self.rowWorkerQueue.join() # block until item in queue is processed
+        self.rowWorkerQueue.join()  # block until item in queue is processed
+
 
     def __getTotalresults__(self):
         self.totalCount = 0
@@ -185,9 +194,11 @@ class GetCraiglistData:
             return
 
         if pages is not None and pages.text != 'no results':
-           self.totalCount = int(pages.find("span", {"class": "totalcount"}).text)
+            self.totalCount = int(pages.find("span", {"class": "totalcount"}).text)
         else:
             self.totalCount = 0
+
+        return
 
     def printresults(self, limit=None):
         """print the search results on output console
@@ -205,7 +216,8 @@ class GetCraiglistData:
             print("Warning : not enough search results. Printing available items.. ")
             for item in self.items:
                 print(item[0], "\t", item[1], "\t", item[2])
-        sys.exit(1)
+        # sys.exit(1)
+        return
 
     def saveresults(self):
         """ Save the search result in current_path/SearchResults.csv
@@ -224,9 +236,10 @@ class GetCraiglistData:
                 print("\nResult saved in SearchResults.csv\nGoodbye.")
             except IOError:
                 print("\nError saving data in file : %s" % sys.exc_info()[0])
-        #sys.exit(1)
+        # sys.exit(1)
+        return
 
-    def __retrievedata__(self,limit=None):
+    def __retrievedata__(self, limit=None):
         self.__getTotalresults__()
         if self.totalCount == 0:
             return self.items
@@ -234,9 +247,8 @@ class GetCraiglistData:
         if limit is None:
             print("\nFound %s items" % self.totalCount)
         else:
-            print("\nFound {} items, retrieving first {} ".format(self.totalCount,limit))
+            print("\nFound {} items, retrieving first {} ".format(self.totalCount, limit))
             self.totalCount = limit
-
         print("\nFetching data...")
 
         # Flush queue
@@ -244,8 +256,7 @@ class GetCraiglistData:
         # Fill queue
         for i in range(0, self.totalCount // 100):
             self.Qurl.put((self.url + self.search_url + self.search_term + self.s_page + str(i * 100)))
-
-        #print(self.Qurl.qsize())
+        # start threads
         self.start_pageThreads()
 
         # Flush queue
@@ -254,9 +265,11 @@ class GetCraiglistData:
         for aPage in self.result_pages:
             for row in aPage:
                 self.Qurl.put(row)
-        print(self.Qurl.qsize())
+        # start thread
         self.start_rowThreads()
-        self.items = list(set(self.items))  # remove the duplicates.
+
+        # Remove Duplicates
+        self.items = list(set(self.items))
         print("\nRetrieved %d items \n" % (len(self.items)))
 
         return self.items
@@ -289,12 +302,14 @@ class GetCraiglistSites:
             print(" Hint: Use one of these - {0}".format(set(self.dict_map)))
         except:
             print("\n Unknown error : {0} \n".format(sys.exc_info()[0]))
+        return
 
     def __extractFromList__(self):
         anchors = self.ListA.find_all("a")
         for anchor in anchors:
             # print(anchor.text,"https:"+anchor.get("href"))
             self.site_map[anchor.text] = "http:" + anchor.get("href")
+        return
 
     def printsitelist(self):
         print("=" * 20 + " List of available sites " + "=" * 20)
@@ -302,6 +317,7 @@ class GetCraiglistSites:
         for keys, values in sorted(self.site_map.items()):
             print(keys, "\t" * 5, values)
         print("=" * 20 + "                         " + "=" * 20)
+        return
 
     def getsuggestions(self, city):
         print("finding recommendations.. ")
@@ -320,6 +336,7 @@ class GetCraiglistSites:
 
         print('\n ** Tip:use printsitelist() to get full list of cities and sites \n')
         # print(suggestion_list)
+        return
 
     def forcity(self, city):
         city = city.lower()
