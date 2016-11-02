@@ -1,5 +1,5 @@
 from time import time
-from Scrapper import GetCraiglistSites, GetCraiglistData
+from Scraper import GetCraiglistSites, GetCraiglistData
 
 start = time()
 try:
