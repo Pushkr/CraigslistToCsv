@@ -58,7 +58,7 @@ class GetCraiglistData:
             print("\nreverting back to default url.. %s" % url)
         return
 
-    def pagefetcher(self, worker):
+    def __pagefetcher__(self, worker):
         temp_url = None
         with self.fetchList_lock:
             if self.Qurl.empty() is False:
@@ -83,11 +83,14 @@ class GetCraiglistData:
         else:
             pass
 
-    def rowfetcher(self, worker):
+    def __rowfetcher__(self, worker):
         row = None
         with self.fetchList_lock:
             if self.Qurl.empty() is False:
                 row = self.Qurl.get()
+
+        if row is None:
+            return
 
         id_url = row.find("a", {"class": "hdrlnk"})
         lurl = (id_url.get("href"))
@@ -137,15 +140,15 @@ class GetCraiglistData:
             self.items.append((title, post_url, price, location, post_time[0], post_time[1][:-5],
                                upd_time[0], upd_time[1][:-5], body_text))
 
-    def pageThreader(self):
+    def __pagethreader__(self):
         while True:
             worker = self.pageWorkerQueue.get()
-            self.pagefetcher(worker)
+            self.__pagefetcher__(worker)
             self.pageWorkerQueue.task_done()
 
-    def start_pageThreads(self):
+    def __startpageThreads__(self):
         for x in range(4):  # Four threads
-            t = threading.Thread(target=self.pageThreader)
+            t = threading.Thread(target=self.__pagethreader__)
             t.daemon = True
             t.start()
 
@@ -153,18 +156,18 @@ class GetCraiglistData:
             self.pageWorkerQueue.put(worker)
         self.pageWorkerQueue.join()  # block until item in queue is processed
 
-    def rowThreader(self):
+    def __rowthreader__(self):
         while True:
             worker = self.rowWorkerQueue.get()
-            self.rowfetcher(worker)
+            self.__rowfetcher__(worker)
             self.rowWorkerQueue.task_done()
 
-    def start_rowThreads(self):
+    def __startrowThreads__(self):
         for x in range(4):  # Four threads
-            t = threading.Thread(target=self.rowThreader)
+            t = threading.Thread(target=self.__rowthreader__)
             t.daemon = True
             t.start()
-        for worker in range(self.Qurl.qsize()):
+        for worker in range(10):
             self.rowWorkerQueue.put(worker)
         self.rowWorkerQueue.join()  # block until item in queue is processed
 
@@ -246,10 +249,13 @@ class GetCraiglistData:
         # Flush queue
         self.Qurl.queue.clear()
         # Fill queue
-        for i in range(0, self.totalCount // 100):
-            self.Qurl.put((self.url + self.search_url + self.search_term + self.s_page + str(i * 100)))
+        if self.totalCount < 100:
+            self.Qurl.put((self.url + self.search_url + self.search_term + self.s_page))
+        else:
+            for i in range(0, self.totalCount // 100):
+                self.Qurl.put((self.url + self.search_url + self.search_term + self.s_page + str(i * 100)))
         # start threads
-        self.start_pageThreads()
+        self.__startpageThreads__()
 
         # Flush queue
         self.Qurl.queue.clear()
@@ -258,7 +264,7 @@ class GetCraiglistData:
             for row in aPage:
                 self.Qurl.put(row)
         # start thread
-        self.start_rowThreads()
+        self.__startrowThreads__()
 
         # Remove Duplicates
         self.items = list(set(self.items))
