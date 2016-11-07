@@ -9,8 +9,7 @@ from requests.exceptions import ChunkedEncodingError
 from urllib.parse import urlparse
 from queue import Queue
 import threading
-
-
+ 
 class GetCraiglistData:
     """ Use this class to search,save and/or print craiglist data"""
 
@@ -33,13 +32,11 @@ class GetCraiglistData:
         self.search_term = search_term.replace(' ', '+')
         self.items = []
 
-        
     @property
     def getterm(self):
         """returns search term """
         return self.search_term
 
-    
     @property
     def geturl(self):
         """
@@ -47,7 +44,6 @@ class GetCraiglistData:
         """
         return self.url
 
-    
     def seturl(self, url):
         try:
             scode = requests.get(url).status_code
@@ -61,7 +57,6 @@ class GetCraiglistData:
             print("\nreverting back to default url.. %s" % url)
         return
 
-    
     def __pagefetcher__(self, worker):
         temp_url = None
         with self.fetchList_lock:
@@ -73,7 +68,7 @@ class GetCraiglistData:
                 webdata_full = requests.get(temp_url)
                 soup = BeautifulSoup(webdata_full.text, "html.parser")
                 result1 = soup.find("div", {"class": "content"})
-                temp_rows = result1.find_all("p", {"class": "row"})
+                temp_rows = result1.find_all("li", {"class": "result-row"})
             except (ConnectionRefusedError, ConnectionResetError, ConnectionAbortedError) as err:
                 print("\nError connecting site : {0} \n".format(err))
                 return
@@ -87,7 +82,6 @@ class GetCraiglistData:
         else:
             pass
 
-        
     def __rowfetcher__(self, worker):
         row = None
         with self.fetchList_lock:
@@ -108,7 +102,6 @@ class GetCraiglistData:
         title = id_url.text if id_url is not None else "No Title"
 
         span = row.find("span", {"class": "price"})
-        
         price = (span.text if span is not None else "Not Listed")
 
         # Retrieve post details
@@ -117,11 +110,9 @@ class GetCraiglistData:
             post_soup = BeautifulSoup(post_data.text, "html.parser")
             pspan = post_soup.find("span", {"class": "postingtitletext"})
             pbody = post_soup.find("section", {"id": "postingbody"})
-        
         except (ConnectionRefusedError, ConnectionResetError, ConnectionAbortedError) as err:
             print("\nError connecting site : {0} \n".format(err))
             return
-        
         except ChunkedEncodingError:
             print("\nSite response delayed, skipping retrieval..: {0}".format(sys.exc_info()[0]))
 
@@ -143,18 +134,13 @@ class GetCraiglistData:
                 upd_time = (pbody[3].find("time", {"class": "timeago"}))['datetime'].split("T")
         except:
             pass
-        
         # push retrieved details into global list
         with self.appendList_lock:
             self.items.append((title, post_url, price, location, post_time[0], post_time[1][:-5],
                                upd_time[0], upd_time[1][:-5], body_text))
 
-            
     def __pagethreader__(self):
-    """
-        Threading module for page search http requests   
-    """
-    while True:
+        while True:
             worker = self.pageWorkerQueue.get()
             self.__pagefetcher__(worker)
             self.pageWorkerQueue.task_done()
@@ -168,18 +154,13 @@ class GetCraiglistData:
         for worker in range(self.Qurl.qsize()):
             self.pageWorkerQueue.put(worker)
         self.pageWorkerQueue.join()  # block until item in queue is processed
-        
-        
+
     def __rowthreader__(self):
-        """
-            Threading module for posting's http requests   
-        """
         while True:
             worker = self.rowWorkerQueue.get()
             self.__rowfetcher__(worker)
             self.rowWorkerQueue.task_done()
 
-            
     def __startrowThreads__(self):
         for x in range(4):  # Four threads
             t = threading.Thread(target=self.__rowthreader__)
@@ -189,7 +170,6 @@ class GetCraiglistData:
             self.rowWorkerQueue.put(worker)
         self.rowWorkerQueue.join()  # block until item in queue is processed
 
-        
     def __getTotalresults__(self):
         self.totalCount = 0
         pages = {}
@@ -214,14 +194,12 @@ class GetCraiglistData:
 
         return
 
-    
     def printresults(self, limit=None):
-        """
-            print the search results on output console
+        """print the search results on output console
         """
         self.__retrievedata__(limit)
         if len(self.items) == 0:
-            print("No results")
+            print("No results......")
         elif limit is None:
             for item in self.items:
                 print(item[0], "\t", item[1], "\t", item[2])
@@ -235,14 +213,10 @@ class GetCraiglistData:
         # sys.exit(1)
         return
 
-    
     def saveresults(self):
-        """ 
-            Save the search result in current_path/SearchResults.csv
+        """ Save the search result in current_path/SearchResults.csv
         """
-        
         self.__retrievedata__()
-        
         if len(self.items) == 0:
             print("\nNo results")
         else:
@@ -259,21 +233,18 @@ class GetCraiglistData:
         # sys.exit(1)
         return
 
-    
     def __retrievedata__(self, limit=None):
-        
-        # Find total number of search result pages to fetch
         self.__getTotalresults__()
-        
-        # No results? => exit
         if self.totalCount == 0:
             return self.items
 
         if limit is None:
             print("\nFound %s items" % self.totalCount)
         else:
-            print("\nFound {} items, retrieving first {} ".format(self.totalCount, limit))
-            self.totalCount = limit
+
+            print("\nFound {} items, retrieving first {} ".format(self.totalCount,
+                limit if limit < self.totalCount else self.totalCount))
+            self.totalCount = limit if limit < self.totalCount else self.totalCount
         print("\nFetching data...")
 
         # Flush queue
@@ -297,7 +268,7 @@ class GetCraiglistData:
         self.__startrowThreads__()
 
         # Remove Duplicates
-        #self.items = list(set(self.items))
+        self.items = list(set(self.items))
         print("\nRetrieved %d items \n" % (len(self.items)))
 
         return self.items
@@ -307,13 +278,11 @@ class GetCraiglistSites:
     dict_map = {"US": 0, "CA": 1, "EU": 2, "ASIA": 3, "OCEANIA": 4, "LATAM": 5, "AF": 6}
     site_map = {}
 
-    
     def __init__(self, continent="US"):
         self.continent = continent
         self.url = "https://www.craigslist.org/about/sites#" + self.continent
         self.__fetchPage__()
 
-        
     def __fetchPage__(self):
         # print(self.url)
         try:
@@ -322,24 +291,18 @@ class GetCraiglistSites:
             sites = soup.find_all("div", {"class": "colmask"})
             self.ListA = sites[self.dict_map.get(self.continent)]
             self.__extractFromList__()
-        
         except ConnectionError as err:
             print("\nError connecting site : {0} \n".format(err))
             return
-        
         except ChunkedEncodingError:
             print("\n Site data delayed, skipping retrieval.. : {0} \n".format(sys.exc_info()[0]))
-        
         except TypeError:
             print("\n Continent not found.")
             print(" Hint: Use one of these - {0}".format(set(self.dict_map)))
-        
         except:
             print("\n Unknown error : {0} \n".format(sys.exc_info()[0]))
-        
         return
 
-    
     def __extractFromList__(self):
         anchors = self.ListA.find_all("a")
         for anchor in anchors:
@@ -347,19 +310,14 @@ class GetCraiglistSites:
             self.site_map[anchor.text] = "http:" + anchor.get("href")
         return
 
-    
     def printsitelist(self):
-        # formating line
         print("=" * 20 + " List of available sites " + "=" * 20)
 
         for keys, values in sorted(self.site_map.items()):
             print(keys, "\t" * 5, values)
-        
-        # formating line
         print("=" * 20 + "                         " + "=" * 20)
         return
 
-    
     def getsuggestions(self, city):
         print("finding recommendations.. ")
         city_found = False
@@ -379,7 +337,6 @@ class GetCraiglistSites:
         # print(suggestion_list)
         return
 
-    
     def forcity(self, city):
         city = city.lower()
         try:
