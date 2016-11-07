@@ -12,7 +12,7 @@ python script to search and export craiglists search data into .csv file.
 ## How to use:
 To search posting for "Honda 2015" in Albany region 
 ```
-from Scrapper import GetCraiglistSites, GetCraiglistData
+from Scraper import GetCraiglistSites, GetCraiglistData
 
 site = GetCraiglistSites()
 g_data = GetCraiglistData("Honda 2015")
@@ -84,6 +84,7 @@ csv file has following headers -
 - [ ] Build a stand-alone executable
 - [ ] Extract keywords
 - [ ] Add additonal configurations methods for searching.
+- [x] Add threading to optimize performance.
 
 ##Notice
 This script is developed solely for the purpose of research and education. Any commertial use of this script may violate cragslist's [terms of use](https://www.craigslist.org/about/terms.of.use.en)
