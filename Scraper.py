@@ -101,7 +101,7 @@ class GetCraiglistData:
 
         title = id_url.text if id_url is not None else "No Title"
 
-        span = row.find("span", {"class": "price"})
+        span = row.find("span", {"class": "result-price"})
         price = (span.text if span is not None else "Not Listed")
 
         # Retrieve post details
