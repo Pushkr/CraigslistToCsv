@@ -1,4 +1,4 @@
-[![Code Climate](https://codeclimate.com/github/Pushkr/CraigslistToCsv/badges/gpa.svg)](https://codeclimate.com/github/Pushkr/CraigslistToCsv)    [![Issue Count](https://codeclimate.com/github/Pushkr/CraigslistToCsv/badges/issue_count.svg)](https://codeclimate.com/github/Pushkr/CraigslistToCsv)
+
 # CraigslistToCsv
 python script to search and export craiglists search data into .csv file.
 
